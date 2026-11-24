@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meu plano de 20 dias</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: Arial, sans-serif;
+        background: #f5f3ef;
+        color: #333;
+        margin: 0;
+        padding: 25px 15px;
+    }
+
+    .container {
+        max-width: 550px;
+        margin: auto;
+        background: white;
+        padding: 25px;
+        border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+    }
+
+    h1 {
+        text-align: center;
+        font-size: 25px;
+        margin-bottom: 5px;
+    }
+
+    .subtitle {
+        text-align: center;
+        color: #888;
+        font-size: 14px;
+        margin-bottom: 25px;
+    }
+
+    .stats {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .stat {
+        flex: 1;
+        background: #f5f3ef;
+        padding: 15px 5px;
+        border-radius: 10px;
+        text-align: center;
+    }
+
+    .stat strong {
+        display: block;
+        font-size: 25px;
+        margin-bottom: 5px;
+    }
+
+    .stat span {
+        font-size: 11px;
+        color: #777;
+    }
+
+    .progress-container {
+        background: #e8e5df;
+        height: 12px;
+        border-radius: 20px;
+        overflow: hidden;
+        margin-bottom: 8px;
+    }
+
+    .progress {
+        height: 100%;
+        width: 0%;
+        background: #77947c;
+        transition: width 0.3s;
+    }
+
+    .progress-text {
+        text-align: right;
+        font-size: 12px;
+        color: #777;
+        margin-bottom: 25px;
+    }
+
+    .day {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 12px 8px;
+        border-bottom: 1px solid #eee;
+        border-radius: 8px;
+    }
+
+    .date {
+        font-size: 13px;
+        font-weight: bold;
+        min-width: 90px;
+    }
+
+    .buttons {
+        display: flex;
+        gap: 6px;
+    }
+
+    button {
+        border: none;
+        border-radius: 7px;
+        padding: 9px 10px;
+        font-size: 12px;
+        cursor: pointer;
+        background: #eee;
+        color: #555;
+    }
+
+    button:hover {
+        opacity: 0.8;
+    }
+
+    .done.active {
+        background: #77947c;
+        color: white;
+    }
+
+    .missed.active {
+        background: #c98278;
+        color: white;
+    }
+
+    .day.completed {
+        background: #f1f6f1;
+    }
+
+    .day.skipped {
+        background: #fbf2f0;
+    }
+
+    .reset {
+        display: block;
+        margin: 25px auto 0;
+        background: transparent;
+        color: #999;
+        text-decoration: underline;
+    }
+
+    .goal {
+        text-align: center;
+        margin-top: 20px;
+        padding: 15px;
+        background: #f5f3ef;
+        border-radius: 10px;
+        font-size: 14px;
+    }
+
+    .goal strong {
+        color: #77947c;
+    }
+
+    @media (max-width: 380px) {
+        .date {
+            min-width: 75px;
+            font-size: 11px;
+        }
+
+        button {
+            padding: 9px 7px;
+            font-size: 11px;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Meu plano de 20 dias</h1>
+
+    <p class="subtitle">
+        15 treinos para decidir se vale investir nos equipamentos.
+    </p>
+
+    <div class="stats">
+
+        <div class="stat">
+            <strong id="doneCount">0</strong>
+            <span>TREINOS FEITOS</span>
+        </div>
+
+        <div class="stat">
+            <strong id="missedCount">0</strong>
+            <span>NÃO FEITOS</span>
+        </div>
+
+        <div class="stat">
+            <strong id="remainingCount">15</strong>
+            <span>FALTAM</span>
+        </div>
+
+    </div>
+
+    <div class="progress-container">
+        <div class="progress" id="progress"></div>
+    </div>
+
+    <div class="progress-text" id="progressText">
+        0% da meta concluída
+    </div>
+
+    <div id="days"></div>
+
+    <div class="goal">
+        Minha meta: <strong>15 treinos em 20 dias!</strong>
+    </div>
+
+    <button class="reset" onclick="resetAll()">
+        Reiniciar acompanhamento
+    </button>
+
+</div>
+
+<script>
+
+const startDate = new Date(2026, 10, 23);
+const totalDays = 20;
+const goal = 15;
+
+const storageKey = "meuPlanoDeTreinos2026";
+
+let records = JSON.parse(
+    localStorage.getItem(storageKey) || "{}"
+);
+
+const daysContainer = document.getElementById("days");
+
+const weekdays = [
+    "DOM", "SEG", "TER", "QUA",
+    "QUI", "SEX", "SÁB"
+];
+
+function formatDate(date) {
+
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+
+    const weekday = weekdays[date.getDay()];
+
+    return `${weekday}, ${day}/${month}`;
+
+}
+
+function renderDays() {
+
+    daysContainer.innerHTML = "";
+
+    for (let i = 0; i < totalDays; i++) {
+
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+
+        const key = date.toISOString().split("T")[0];
+
+        const status = records[key] || "";
+
+        const row = document.createElement("div");
+
+        row.className = "day";
+
+        if (status === "done") {
+            row.classList.add("completed");
+        }
+
+        if (status === "missed") {
+            row.classList.add("skipped");
+        }
+
+        row.innerHTML = `
+
+            <span class="date">
+                ${formatDate(date)}
+            </span>
+
+            <div class="buttons">
+
+                <button
+                    class="done ${status === "done" ? "active" : ""}"
+                    onclick="setStatus('${key}', 'done')">
+                    ✓ Fiz
+                </button>
+
+                <button
+                    class="missed ${status === "missed" ? "active" : ""}"
+                    onclick="setStatus('${key}', 'missed')">
+                    ✕ Não fiz
+                </button>
+
+            </div>
+
+        `;
+
+        daysContainer.appendChild(row);
+
+    }
+
+    updateStats();
+
+}
+
+function setStatus(date, status) {
+
+    if (records[date] === status) {
+
+        delete records[date];
+
+    } else {
+
+        records[date] = status;
+
+    }
+
+    localStorage.setItem(
+        storageKey,
+        JSON.stringify(records)
+    );
+
+    renderDays();
+
+}
+
+function updateStats() {
+
+    const values = Object.values(records);
+
+    const done = values.filter(
+        value => value === "done"
+    ).length;
+
+    const missed = values.filter(
+        value => value === "missed"
+    ).length;
+
+    const remaining = Math.max(0, goal - done);
+
+    const percentage = Math.min(
+        100,
+        Math.round((done / goal) * 100)
+    );
+
+    document.getElementById("doneCount").textContent = done;
+
+    document.getElementById("missedCount").textContent = missed;
+
+    document.getElementById("remainingCount").textContent = remaining;
+
+    document.getElementById("progress").style.width =
+        percentage + "%";
+
+    document.getElementById("progressText").textContent =
+        percentage + "% da meta concluída";
+
+    if (done >= goal) {
+
+        document.getElementById("progressText").textContent =
+            "🎉 Meta de 15 treinos alcançada!";
+
+    }
+
+}
+
+function resetAll() {
+
+    const confirmReset = confirm(
+        "Tem certeza que deseja apagar todas as marcações?"
+    );
+
+    if (confirmReset) {
+
+        records = {};
+
+        localStorage.removeItem(storageKey);
+
+        renderDays();
+
+    }
+
+}
+
+renderDays();
+
+</script>
+
+</body>
+</html>
